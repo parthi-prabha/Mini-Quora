@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Quora — Share & Discuss</title>
+    <meta name="description" content="A Mini Quora-like platform for sharing thoughts, asking questions, and discovering top-ranked posts.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: rgba(22, 22, 35, 0.7);
+            --bg-card-hover: rgba(30, 30, 50, 0.85);
+            --bg-glass: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent: #7c5cff;
+            --accent-glow: rgba(124,92,255,0.25);
+            --accent-hover: #9478ff;
+            --upvote: #22c55e;
+            --upvote-bg: rgba(34,197,94,0.12);
+            --downvote: #ef4444;
+            --downvote-bg: rgba(239,68,68,0.12);
+            --success: #10b981;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== BACKGROUND AMBIENCE ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(124,92,255,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.04) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(168,85,247,0.04) 0%, transparent 50%);
+            animation: ambientDrift 20s ease-in-out infinite alternate;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes ambientDrift {
+            0% { transform: translate(0,0) rotate(0deg); }
+            100% { transform: translate(-2%,-2%) rotate(3deg); }
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10,10,15,0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+        }
+        .header-inner {
+            max-width: 800px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 64px;
+        }
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 800; font-size: 1.3rem;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .logo-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; -webkit-text-fill-color: white;
+        }
+        .user-area { display: flex; align-items: center; gap: 12px; }
+        .user-chip {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-glass); border: 1px solid var(--border);
+            border-radius: 100px; padding: 6px 14px 6px 8px;
+            font-size: 0.82rem; color: var(--text-secondary);
+            cursor: pointer; transition: var(--transition);
+        }
+        .user-chip:hover { border-color: var(--border-hover); background: rgba(255,255,255,0.06); }
+        .user-avatar {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; color: white;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border: none; border-radius: var(--radius-sm);
+            font-family: inherit; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: var(--transition);
+            text-decoration: none; letter-spacing: 0.01em;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #6d4de8);
+            color: white; box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-hover), #7c5cff);
+            box-shadow: 0 6px 24px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+        .btn-ghost {
+            background: transparent; color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { border-color: var(--border-hover); color: var(--text-primary); }
+        .btn-sm { padding: 7px 14px; font-size: 0.8rem; border-radius: 8px; }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main { max-width: 800px; margin: 0 auto; padding: 24px 24px 80px; position: relative; z-index: 1; }
+
+        /* ===== POST CARD ===== */
+        .post-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(12px);
+            transition: var(--transition);
+            animation: fadeInUp 0.4s ease forwards;
+        }
+        .post-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .post-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .post-author-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #a78bfa);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; color: white; flex-shrink: 0;
+        }
+        .post-meta { display: flex; flex-direction: column; }
+        .post-author { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+        .post-time { font-size: 0.75rem; color: var(--text-muted); }
+        .post-title {
+            font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;
+            color: var(--text-primary); line-height: 1.4;
+        }
+        .post-body {
+            font-size: 0.92rem; color: var(--text-secondary);
+            line-height: 1.65; margin-bottom: 16px;
+            display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .post-actions {
+            display: flex; align-items: center; gap: 6px;
+            padding-top: 14px; border-top: 1px solid var(--border);
+        }
+
+        /* ===== VOTE BUTTONS ===== */
+        .vote-group { display: flex; align-items: center; gap: 2px; }
+        .vote-btn {
+            width: 36px; height: 36px; border-radius: 8px;
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            background: transparent; color: var(--text-muted);
+            transition: var(--transition);
+        }
+        .vote-btn:hover { background: var(--bg-glass); }
+        .vote-btn.upvote:hover, .vote-btn.upvote.active { color: var(--upvote); background: var(--upvote-bg); }
+        .vote-btn.downvote:hover, .vote-btn.downvote.active { color: var(--downvote); background: var(--downvote-bg); }
+        .vote-score {
+            min-width: 40px; text-align: center;
+            font-size: 0.9rem; font-weight: 700; color: var(--text-primary);
+            padding: 0 4px;
+        }
+        .vote-score.positive { color: var(--upvote); }
+        .vote-score.negative { color: var(--downvote); }
+
+        .comment-toggle {
+            display: flex; align-items: center; gap: 6px;
+            background: transparent; border: none;
+            color: var(--text-muted); font-size: 0.82rem;
+            font-family: inherit; cursor: pointer;
+            padding: 8px 12px; border-radius: 8px;
+            transition: var(--transition);
+        }
+        .comment-toggle:hover { background: var(--bg-glass); color: var(--text-secondary); }
+
+        /* ===== COMMENTS SECTION ===== */
+        .comments-section {
+            margin-top: 16px; padding-top: 16px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+        .comments-section.open { display: block; }
+        .comment-item {
+            display: flex; gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .comment-item:last-child { border-bottom: none; }
+        .comment-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, #22d3ee, #6366f1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; font-weight: 700; color: white;
+            flex-shrink: 0; margin-top: 2px;
+        }
+        .comment-content { flex: 1; }
+        .comment-author { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
+        .comment-time { font-size: 0.7rem; color: var(--text-muted); margin-left: 8px; }
+        .comment-body { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-top: 2px; }
+
+        /* ===== COMMENT INPUT ===== */
+        .comment-input-area {
+            display: flex; gap: 10px; margin-top: 12px;
+            align-items: flex-start;
+        }
+        .comment-input {
+            flex: 1; background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            color: var(--text-primary); font-family: inherit;
+            font-size: 0.85rem; resize: none;
+            min-height: 40px; max-height: 120px;
+            transition: var(--transition);
+        }
+        .comment-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .comment-input::placeholder { color: var(--text-muted); }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: none; align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            width: 100%; max-width: 540px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-title {
+            font-size: 1.3rem; font-weight: 700; margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .form-group { margin-bottom: 18px; }
+        .form-label {
+            display: block; font-size: 0.82rem; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 6px;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .form-input, .form-textarea {
+            width: 100%; background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            color: var(--text-primary); font-family: inherit;
+            font-size: 0.9rem; transition: var(--transition);
+        }
+        .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); }
+        .form-textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed; bottom: 24px; right: 24px; z-index: 300;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 20px; color: var(--text-primary);
+            font-size: 0.85rem; box-shadow: var(--shadow);
+            animation: toastIn 0.3s ease;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--downvote); }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(24px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center; padding: 80px 24px;
+            color: var(--text-muted);
+        }
+        .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+        .empty-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); }
+        .empty-text { font-size: 0.9rem; }
+
+        /* ===== LOADING ===== */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-glass) 25%, rgba(255,255,255,0.06) 50%, var(--bg-glass) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .header-inner { padding: 0; }
+            .main { padding: 16px 16px 80px; }
+            .post-card { padding: 18px; }
+            .modal { padding: 24px; margin: 12px; }
+            .post-title { font-size: 1.05rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">
+            <div class="logo-icon">Q</div>
+            Mini Quora
+        </div>
+        <div class="user-area">
+            <button class="btn btn-primary btn-sm" id="newPostBtn" onclick="openModal('post')" style="display:none;">
+                <span>＋</span> New Post
+            </button>
+            <div class="user-chip" id="userChip" onclick="openModal('auth')">
+                <div class="user-avatar" id="userAvatarSmall">?</div>
+                <span id="userNameDisplay">Sign In</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="main" id="feed">
+    <div class="empty-state" id="loadingState">
+        <div class="empty-icon">⏳</div>
+        <div class="empty-title">Loading posts...</div>
+    </div>
+</main>
+
+<!-- ===== AUTH MODAL ===== -->
+<div class="modal-overlay" id="authModal">
+    <div class="modal">
+        <div class="modal-title">Welcome to Mini Quora</div>
+        <div class="form-group">
+            <label class="form-label">Your Name</label>
+            <input class="form-input" id="authName" type="text" placeholder="e.g. John Doe">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="authEmail" type="email" placeholder="e.g. john@example.com">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost btn-sm" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="registerUser()">Continue</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== NEW POST MODAL ===== -->
+<div class="modal-overlay" id="postModal">
+    <div class="modal">
+        <div class="modal-title">Share a Thought</div>
+        <div class="form-group">
+            <label class="form-label">Title</label>
+            <input class="form-input" id="postTitle" type="text" placeholder="What's on your mind?">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Body</label>
+            <textarea class="form-textarea" id="postBody" placeholder="Elaborate your thoughts..."></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost btn-sm" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="createPost()">Publish</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    // ===== STATE =====
+    const API = '';
+    let currentUser = JSON.parse(localStorage.getItem('miniQuoraUser')) || null;
+    let posts = [];
+
+    // ===== INIT =====
+    document.addEventListener('DOMContentLoaded', () => {
+        updateUserUI();
+        loadPosts();
+    });
+
+    // ===== AUTH =====
+    function updateUserUI() {
+        const chip = document.getElementById('userNameDisplay');
+        const avatar = document.getElementById('userAvatarSmall');
+        const newPostBtn = document.getElementById('newPostBtn');
+        if (currentUser) {
+            chip.textContent = currentUser.name;
+            avatar.textContent = currentUser.name.charAt(0).toUpperCase();
+            newPostBtn.style.display = 'inline-flex';
+        } else {
+            chip.textContent = 'Sign In';
+            avatar.textContent = '?';
+            newPostBtn.style.display = 'none';
+        }
+    }
+
+    async function registerUser() {
+        const name = document.getElementById('authName').value.trim();
+        const email = document.getElementById('authEmail').value.trim();
+        if (!name || !email) return toast('Please fill in all fields', 'error');
+
+        try {
+            const res = await fetch(`${API}/api/users/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            currentUser = { id: data.id, name: data.name, email: data.email };
+            localStorage.setItem('miniQuoraUser', JSON.stringify(currentUser));
+            updateUserUI();
+            closeAllModals();
+            loadPosts();
+            toast(`Welcome, ${data.name}!`, 'success');
+        } catch (e) {
+            toast(e.message, 'error');
+        }
+    }
+
+    // ===== POSTS =====
+    async function loadPosts() {
+        const feed = document.getElementById('feed');
+        try {
+            const uid = currentUser ? `?userId=${currentUser.id}` : '';
+            const res = await fetch(`${API}/api/posts${uid}`);
+            posts = await res.json();
+            renderPosts();
+        } catch (e) {
+            feed.innerHTML = `<div class="empty-state">
+                <div class="empty-icon">⚠️</div>
+                <div class="empty-title">Could not load posts</div>
+                <div class="empty-text">${e.message}</div>
+            </div>`;
+        }
+    }
+
+    function renderPosts() {
+        const feed = document.getElementById('feed');
+        if (posts.length === 0) {
+            feed.innerHTML = `<div class="empty-state">
+                <div class="empty-icon">💭</div>
+                <div class="empty-title">No posts yet</div>
+                <div class="empty-text">Be the first to share a thought!</div>
+            </div>`;
+            return;
+        }
+        feed.innerHTML = posts.map((p, idx) => `
+            <div class="post-card" style="animation-delay:${idx * 0.06}s" id="post-${p.id}">
+                <div class="post-header">
+                    <div class="post-author-avatar">${(p.authorName||'?').charAt(0).toUpperCase()}</div>
+                    <div class="post-meta">
+                        <span class="post-author">${escHtml(p.authorName)}</span>
+                        <span class="post-time">${timeAgo(p.createdAt)}</span>
+                    </div>
+                </div>
+                <div class="post-title">${escHtml(p.title)}</div>
+                <div class="post-body">${escHtml(p.body)}</div>
+                <div class="post-actions">
+                    <div class="vote-group">
+                        <button class="vote-btn upvote ${p.userVote===1?'active':''}" onclick="vote(${p.id},1)" title="Upvote">▲</button>
+                        <span class="vote-score ${p.voteScore>0?'positive':''} ${p.voteScore<0?'negative':''}">${p.voteScore}</span>
+                        <button class="vote-btn downvote ${p.userVote===-1?'active':''}" onclick="vote(${p.id},-1)" title="Downvote">▼</button>
+                    </div>
+                    <button class="comment-toggle" onclick="toggleComments(${p.id})">
+                        💬 ${p.commentCount} Comment${p.commentCount!==1?'s':''}
+                    </button>
+                </div>
+                <div class="comments-section" id="comments-${p.id}">
+                    <div id="comment-list-${p.id}"></div>
+                    ${currentUser ? `
+                    <div class="comment-input-area">
+                        <div class="comment-avatar">${currentUser.name.charAt(0).toUpperCase()}</div>
+                        <input class="comment-input" id="comment-input-${p.id}" placeholder="Write a comment..." onkeydown="if(event.key==='Enter')addComment(${p.id})">
+                        <button class="btn btn-primary btn-sm" onclick="addComment(${p.id})">Post</button>
+                    </div>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function createPost() {
+        if (!currentUser) return openModal('auth');
+        const title = document.getElementById('postTitle').value.trim();
+        const body = document.getElementById('postBody').value.trim();
+        if (!title || !body) return toast('Please fill in all fields', 'error');
+
+        try {
+            const res = await fetch(`${API}/api/posts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id, title, body })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            closeAllModals();
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postBody').value = '';
+            toast('Post published!', 'success');
+            loadPosts();
+        } catch (e) {
+            toast(e.message, 'error');
+        }
+    }
+
+    // ===== VOTES =====
+    async function vote(postId, voteType) {
+        if (!currentUser) return openModal('auth');
+        try {
+            await fetch(`${API}/api/votes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id, postId, voteType })
+            });
+            loadPosts();
+        } catch (e) {
+            toast(e.message, 'error');
+        }
+    }
+
+    // ===== COMMENTS =====
+    async function toggleComments(postId) {
+        const section = document.getElementById(`comments-${postId}`);
+        const isOpen = section.classList.toggle('open');
+        if (isOpen) {
+            await loadComments(postId);
+        }
+    }
+
+    async function loadComments(postId) {
+        const list = document.getElementById(`comment-list-${postId}`);
+        try {
+            const res = await fetch(`${API}/api/comments/post/${postId}`);
+            const comments = await res.json();
+            if (comments.length === 0) {
+                list.innerHTML = '<div style="padding:12px 0;color:var(--text-muted);font-size:0.85rem;">No comments yet.</div>';
+                return;
+            }
+            list.innerHTML = comments.map(c => `
+                <div class="comment-item">
+                    <div class="comment-avatar">${(c.authorName||'?').charAt(0).toUpperCase()}</div>
+                    <div class="comment-content">
+                        <span class="comment-author">${escHtml(c.authorName)}</span>
+                        <span class="comment-time">${timeAgo(c.createdAt)}</span>
+                        <div class="comment-body">${escHtml(c.body)}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--downvote);font-size:0.85rem;">Failed to load comments</div>';
+        }
+    }
+
+    async function addComment(postId) {
+        if (!currentUser) return openModal('auth');
+        const input = document.getElementById(`comment-input-${postId}`);
+        const body = input.value.trim();
+        if (!body) return;
+
+        try {
+            const res = await fetch(`${API}/api/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id, postId, body })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            input.value = '';
+            await loadComments(postId);
+            // Update comment count in the post
+            const post = posts.find(p => p.id === postId);
+            if (post) post.commentCount++;
+            const toggleBtn = document.querySelector(`#post-${postId} .comment-toggle`);
+            if (toggleBtn && post) toggleBtn.innerHTML = `💬 ${post.commentCount} Comment${post.commentCount!==1?'s':''}`;
+        } catch (e) {
+            toast(e.message, 'error');
+        }
+    }
+
+    // ===== MODALS =====
+    function openModal(type) {
+        closeAllModals();
+        if (type === 'auth') document.getElementById('authModal').classList.add('open');
+        if (type === 'post') {
+            if (!currentUser) return openModal('auth');
+            document.getElementById('postModal').classList.add('open');
+        }
+    }
+    function closeAllModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+    }
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeAllModals();
+        });
+    });
+
+    // ===== TOAST =====
+    function toast(msg, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `${type === 'success' ? '✓' : '✗'} ${escHtml(msg)}`;
+        container.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    // ===== UTILS =====
+    function escHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function timeAgo(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        const now = new Date();
+        const s = Math.floor((now - d) / 1000);
+        if (s < 60) return 'just now';
+        if (s < 3600) return Math.floor(s/60) + 'm ago';
+        if (s < 86400) return Math.floor(s/3600) + 'h ago';
+        if (s < 2592000) return Math.floor(s/86400) + 'd ago';
+        return d.toLocaleDateString();
+    }
+</script>
+</body>
+</html>
