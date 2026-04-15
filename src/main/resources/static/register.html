@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — Mini Quora</title>
+    <meta name="description" content="Create your Mini Quora account. Join the community to share thoughts, ask questions, and discover top-ranked posts.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: rgba(22, 22, 35, 0.7);
+            --bg-glass: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent: #7c5cff;
+            --accent-glow: rgba(124,92,255,0.25);
+            --accent-hover: #9478ff;
+            --success: #10b981;
+            --error: #ef4444;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(124,92,255,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(168,85,247,0.06) 0%, transparent 50%);
+            animation: ambientDrift 20s ease-in-out infinite alternate;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes ambientDrift {
+            0% { transform: translate(0,0) rotate(0deg); }
+            100% { transform: translate(-2%,-2%) rotate(3deg); }
+        }
+
+        /* ===== FLOATING ORB PARTICLES ===== */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .orb-1 {
+            width: 400px; height: 400px;
+            background: rgba(124, 92, 255, 0.15);
+            top: -10%; left: -5%;
+            animation: orbFloat1 15s ease-in-out infinite;
+        }
+        .orb-2 {
+            width: 350px; height: 350px;
+            background: rgba(59, 130, 246, 0.12);
+            bottom: -10%; right: -5%;
+            animation: orbFloat2 18s ease-in-out infinite;
+        }
+        .orb-3 {
+            width: 250px; height: 250px;
+            background: rgba(168, 85, 247, 0.1);
+            top: 50%; left: 60%;
+            animation: orbFloat3 12s ease-in-out infinite;
+        }
+        @keyframes orbFloat1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 40px) scale(1.1); }
+        }
+        @keyframes orbFloat2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-40px, -30px) scale(1.15); }
+        }
+        @keyframes orbFloat3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -50px) scale(0.9); }
+        }
+
+        /* ===== REGISTER CONTAINER ===== */
+        .register-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+            animation: pageIn 0.6s ease forwards;
+        }
+        @keyframes pageIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ===== REGISTER CARD ===== */
+        .register-card {
+            background: rgba(18, 18, 26, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 48px 40px;
+            backdrop-filter: blur(24px) saturate(180%);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+                        0 1px 0 rgba(255, 255, 255, 0.04) inset;
+            position: relative;
+            overflow: hidden;
+        }
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), #a78bfa, transparent);
+            opacity: 0.7;
+        }
+
+        /* ===== LOGO ===== */
+        .brand {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .brand-icon {
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 800; color: white;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px var(--accent-glow);
+            animation: brandPulse 3s ease-in-out infinite;
+        }
+        @keyframes brandPulse {
+            0%, 100% { box-shadow: 0 8px 24px var(--accent-glow); }
+            50% { box-shadow: 0 8px 40px rgba(124,92,255,0.4); }
+        }
+        .brand-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), #a78bfa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+        .brand-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* ===== FORM ===== */
+        .form-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .form-input-wrapper {
+            position: relative;
+        }
+        .form-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            color: var(--text-muted);
+            transition: var(--transition);
+            pointer-events: none;
+        }
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px 14px 46px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.92rem;
+            transition: var(--transition);
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .form-input:focus + .form-icon-focus,
+        .form-input:focus ~ .form-icon {
+            color: var(--accent);
+        }
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* ===== SUBMIT BUTTON ===== */
+        .btn-register {
+            width: 100%;
+            padding: 15px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, var(--accent), #6d4de8);
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            letter-spacing: 0.02em;
+            position: relative;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .btn-register::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+        .btn-register:hover {
+            background: linear-gradient(135deg, var(--accent-hover), #7c5cff);
+            box-shadow: 0 8px 32px rgba(124, 92, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-register:hover::before {
+            left: 100%;
+        }
+        .btn-register:active {
+            transform: translateY(0);
+        }
+        .btn-register:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-register .spinner {
+            display: none;
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+        .btn-register.loading .spinner { display: inline-block; }
+        .btn-register.loading .btn-text { opacity: 0.8; }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== DIVIDER ===== */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 28px 0;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .divider-text {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+        }
+
+        /* ===== SIGN IN LINK ===== */
+        .signin-link {
+            text-align: center;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+        .signin-link a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            position: relative;
+        }
+        .signin-link a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 0;
+            width: 0; height: 2px;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+        .signin-link a:hover {
+            color: var(--accent-hover);
+        }
+        .signin-link a:hover::after {
+            width: 100%;
+        }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed; bottom: 24px; right: 24px; z-index: 300;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 22px; color: var(--text-primary);
+            font-size: 0.85rem; box-shadow: var(--shadow);
+            animation: toastIn 0.3s ease;
+            display: flex; align-items: center; gap: 10px;
+            backdrop-filter: blur(12px);
+        }
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--error); }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(24px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ===== FORM VALIDATION ===== */
+        .form-input.error {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+        }
+        .form-input.success {
+            border-color: var(--success);
+        }
+        .input-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            transition: var(--transition);
+        }
+        .input-hint.error { color: var(--error); }
+        .input-hint.show { display: block; }
+
+        /* ===== PASSWORD STRENGTH ===== */
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.03);
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .feature-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 540px) {
+            body { padding: 16px; }
+            .register-card {
+                padding: 36px 24px;
+                border-radius: 20px;
+            }
+            .brand-title { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== BACKGROUND ORBS ===== -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ===== REGISTER CONTAINER ===== -->
+<div class="register-container">
+    <div class="register-card">
+        <!-- Brand -->
+        <div class="brand">
+            <div class="brand-icon">Q</div>
+            <div class="brand-title">Create Account</div>
+            <div class="brand-subtitle">Join Mini Quora and start sharing your thoughts</div>
+        </div>
+
+        <!-- Form -->
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label class="form-label" for="regName">Full Name</label>
+                <div class="form-input-wrapper">
+                    <input class="form-input" id="regName" type="text" placeholder="e.g. John Doe" autocomplete="name" required>
+                    <span class="form-icon">👤</span>
+                </div>
+                <div class="input-hint" id="nameHint"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="regEmail">Email Address</label>
+                <div class="form-input-wrapper">
+                    <input class="form-input" id="regEmail" type="email" placeholder="e.g. john@example.com" autocomplete="email" required>
+                    <span class="form-icon">✉️</span>
+                </div>
+                <div class="input-hint" id="emailHint"></div>
+            </div>
+
+            <button class="btn-register" type="submit" id="submitBtn">
+                <span class="spinner"></span>
+                <span class="btn-text">Create Account</span>
+            </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="divider">
+            <span class="divider-text">or</span>
+        </div>
+
+        <!-- Sign In Link -->
+        <div class="signin-link">
+            Already have an account? <a href="index.html">Sign In</a>
+        </div>
+
+        <!-- Features -->
+        <div class="features-list">
+            <div class="feature-item">
+                <div class="feature-dot"></div>
+                <span>Share your thoughts and ideas</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-dot"></div>
+                <span>Upvote and discuss with the community</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-dot"></div>
+                <span>Discover top-ranked posts</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    const API = '';
+
+    // ===== FORM VALIDATION =====
+    const nameInput = document.getElementById('regName');
+    const emailInput = document.getElementById('regEmail');
+
+    nameInput.addEventListener('input', () => {
+        const val = nameInput.value.trim();
+        nameInput.classList.remove('error', 'success');
+        const hint = document.getElementById('nameHint');
+        if (val.length > 0 && val.length < 2) {
+            nameInput.classList.add('error');
+            hint.textContent = 'Name must be at least 2 characters';
+            hint.classList.add('error');
+        } else if (val.length >= 2) {
+            nameInput.classList.add('success');
+            hint.textContent = '';
+            hint.classList.remove('error');
+        } else {
+            hint.textContent = '';
+            hint.classList.remove('error');
+        }
+    });
+
+    emailInput.addEventListener('input', () => {
+        const val = emailInput.value.trim();
+        emailInput.classList.remove('error', 'success');
+        const hint = document.getElementById('emailHint');
+        if (val.length > 0 && !isValidEmail(val)) {
+            emailInput.classList.add('error');
+            hint.textContent = 'Please enter a valid email address';
+            hint.classList.add('error');
+        } else if (val.length > 0 && isValidEmail(val)) {
+            emailInput.classList.add('success');
+            hint.textContent = '';
+            hint.classList.remove('error');
+        } else {
+            hint.textContent = '';
+            hint.classList.remove('error');
+        }
+    });
+
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    // ===== REGISTER =====
+    async function handleRegister(e) {
+        e.preventDefault();
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+
+        // Validate
+        if (!name || name.length < 2) {
+            nameInput.classList.add('error');
+            toast('Please enter a valid name (at least 2 characters)', 'error');
+            nameInput.focus();
+            return;
+        }
+        if (!email || !isValidEmail(email)) {
+            emailInput.classList.add('error');
+            toast('Please enter a valid email address', 'error');
+            emailInput.focus();
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.classList.add('loading');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${API}/api/users/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email })
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Store user in localStorage
+            const user = { id: data.id, name: data.name, email: data.email };
+            localStorage.setItem('miniQuoraUser', JSON.stringify(user));
+
+            toast(`Welcome to Mini Quora, ${data.name}! 🎉`, 'success');
+
+            // Redirect to main page after a brief delay
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1200);
+
+        } catch (err) {
+            toast(err.message, 'error');
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    }
+
+    // ===== TOAST =====
+    function toast(msg, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `${type === 'success' ? '✓' : '✗'} ${escHtml(msg)}`;
+        container.appendChild(el);
+        setTimeout(() => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(24px)';
+            el.style.transition = '0.3s';
+            setTimeout(() => el.remove(), 300);
+        }, 4000);
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+</script>
+</body>
+</html>

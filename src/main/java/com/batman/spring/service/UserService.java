@@ -16,13 +16,18 @@ public class UserService {
 
     public User register(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            return userRepository.findByEmail(request.getEmail()).get();
+            throw new RuntimeException("An account with this email already exists. Please sign in instead.");
         }
 
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         return userRepository.save(user);
+    }
+
+    public User login(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("No account found with this email. Please register first."));
     }
 
     public User getById(Long id) {

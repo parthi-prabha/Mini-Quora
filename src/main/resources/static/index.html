@@ -87,7 +87,7 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 16px; -webkit-text-fill-color: white;
         }
-        .user-area { display: flex; align-items: center; gap: 12px; }
+        .user-area { display: flex; align-items: center; gap: 12px; position: relative; }
         .user-chip {
             display: flex; align-items: center; gap: 8px;
             background: var(--bg-glass); border: 1px solid var(--border);
@@ -102,6 +102,38 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 0.7rem; font-weight: 700; color: white;
         }
+
+        /* ===== USER DROPDOWN ===== */
+        .user-dropdown {
+            position: absolute; top: calc(100% + 8px); right: 0;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 6px;
+            min-width: 200px; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+            backdrop-filter: blur(20px); z-index: 150;
+            display: none; animation: dropIn 0.2s ease;
+        }
+        .user-dropdown.open { display: block; }
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .dropdown-header {
+            padding: 10px 12px; border-bottom: 1px solid var(--border);
+            margin-bottom: 4px;
+        }
+        .dropdown-header-name { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+        .dropdown-header-email { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .dropdown-item {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 10px 12px;
+            background: none; border: none; border-radius: 8px;
+            font-family: inherit; font-size: 0.84rem;
+            color: var(--text-secondary); cursor: pointer;
+            transition: var(--transition); text-decoration: none;
+        }
+        .dropdown-item:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+        .dropdown-item.danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+        .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
         /* ===== BUTTONS ===== */
         .btn {
@@ -364,9 +396,19 @@
             <button class="btn btn-primary btn-sm" id="newPostBtn" onclick="openModal('post')" style="display:none;">
                 <span>＋</span> New Post
             </button>
-            <div class="user-chip" id="userChip" onclick="openModal('auth')">
+            <div class="user-chip" id="userChip" onclick="handleUserChipClick()">
                 <div class="user-avatar" id="userAvatarSmall">?</div>
                 <span id="userNameDisplay">Sign In</span>
+            </div>
+            <!-- User Dropdown -->
+            <div class="user-dropdown" id="userDropdown">
+                <div class="dropdown-header" id="dropdownHeader">
+                    <div class="dropdown-header-name" id="dropdownName"></div>
+                    <div class="dropdown-header-email" id="dropdownEmail"></div>
+                </div>
+                <a class="dropdown-item" href="register.html">📝 Register New Account</a>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item danger" onclick="logout()">🚪 Sign Out</button>
             </div>
         </div>
     </div>
@@ -380,21 +422,20 @@
     </div>
 </main>
 
-<!-- ===== AUTH MODAL ===== -->
+<!-- ===== AUTH MODAL (Sign In) ===== -->
 <div class="modal-overlay" id="authModal">
     <div class="modal">
-        <div class="modal-title">Welcome to Mini Quora</div>
-        <div class="form-group">
-            <label class="form-label">Your Name</label>
-            <input class="form-input" id="authName" type="text" placeholder="e.g. John Doe">
-        </div>
+        <div class="modal-title">Sign In to Mini Quora</div>
         <div class="form-group">
             <label class="form-label">Email</label>
-            <input class="form-input" id="authEmail" type="email" placeholder="e.g. john@example.com">
+            <input class="form-input" id="authEmail" type="email" placeholder="e.g. john@example.com" onkeydown="if(event.key==='Enter')loginUser()">
         </div>
-        <div class="modal-actions">
-            <button class="btn btn-ghost btn-sm" onclick="closeAllModals()">Cancel</button>
-            <button class="btn btn-primary btn-sm" onclick="registerUser()">Continue</button>
+        <div class="modal-actions" style="justify-content: space-between; align-items: center;">
+            <a href="register.html" style="font-size:0.85rem; color:var(--accent); text-decoration:none; font-weight:600;">Create Account →</a>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-ghost btn-sm" onclick="closeAllModals()">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="loginUser()">Sign In</button>
+            </div>
         </div>
     </div>
 </div>
@@ -449,16 +490,44 @@
         }
     }
 
-    async function registerUser() {
-        const name = document.getElementById('authName').value.trim();
+    function handleUserChipClick() {
+        if (currentUser) {
+            const dropdown = document.getElementById('userDropdown');
+            document.getElementById('dropdownName').textContent = currentUser.name;
+            document.getElementById('dropdownEmail').textContent = currentUser.email;
+            dropdown.classList.toggle('open');
+        } else {
+            openModal('auth');
+        }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('userDropdown');
+        const chip = document.getElementById('userChip');
+        if (!chip.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('miniQuoraUser');
+        document.getElementById('userDropdown').classList.remove('open');
+        updateUserUI();
+        loadPosts();
+        toast('Signed out successfully', 'success');
+    }
+
+    async function loginUser() {
         const email = document.getElementById('authEmail').value.trim();
-        if (!name || !email) return toast('Please fill in all fields', 'error');
+        if (!email) return toast('Please enter your email', 'error');
 
         try {
-            const res = await fetch(`${API}/api/users/register`, {
+            const res = await fetch(`${API}/api/users/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email })
+                body: JSON.stringify({ email })
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
@@ -467,7 +536,7 @@
             updateUserUI();
             closeAllModals();
             loadPosts();
-            toast(`Welcome, ${data.name}!`, 'success');
+            toast(`Welcome back, ${data.name}!`, 'success');
         } catch (e) {
             toast(e.message, 'error');
         }
